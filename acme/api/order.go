@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"time"
+	"net/url"
 
 	"github.com/go-acme/lego/v4/acme"
 )
@@ -53,9 +54,15 @@ func (o *OrderService) NewWithOptions(domains []string, opts *OrderOptions) (acm
 		return acme.ExtendedOrder{}, err
 	}
 
+	NewOrderURLParsed, err := url.Parse(o.core.GetDirectory().NewOrderURL)
+	location, err := url.Parse(resp.Header.Get("Location"))
+	if !location.IsAbs() {
+		location = NewOrderURLParsed.ResolveReference(location)
+	}
+
 	return acme.ExtendedOrder{
 		Order:    order,
-		Location: resp.Header.Get("Location"),
+		Location: location.String(),
 	}, nil
 }
 
